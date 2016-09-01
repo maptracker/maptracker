@@ -1,0 +1,52 @@
+# MapTracker path to get all reliable information connected to locus
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step INITIALIZE
+
+param
+        -tag => path_name
+        -val => Homologene
+
+param
+        -tag => path_desc
+        -val => 'Builds a network surrounding a Homologene cluster'
+
+param
+        -tag => path_short
+        -val => 'Homologene Network'
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+
+expand 
+        -recurse  => 0
+        -groupat  => 50
+        -limit    => 50
+        -sametaxa => 0
+        -keeptype => 'is a cluster with sequence'
+
+pick
+        -category => PROTEIN
+        -source   => ALL
+        -isclass  => PROTEIN
+
+explicitly_expand
+        -usepick   => PROTEIN
+        -edge1     => 'is an unversioned accession of'
+        -edge2     => 'is homologous to'
+        -groupat   => 50
+        -limit     => 50
+        -addpick   => VERSIONED
+
+explicitly_expand
+        -usepick   => VERSIONED
+        -edge1     => 'is translated from'
+        -edge2     => 'is homologous to'
+        -groupat   => 50
+        -limit     => 50
+
+expand 
+        -keeptype => 'is a shorter term for'
+        -recurse  => 0
+        -limit    => 1
+        -usepick  => all

@@ -1,0 +1,30 @@
+# MapTracker path to show RefSeq information
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step INITIALIZE
+
+param
+        -tag => path_name
+        -val => Find_Aliases
+
+param
+        -tag => path_desc
+        -val => 'Finds all nodes that are related by terminology to this one'
+
+param
+        -tag => path_short
+        -val => 'Lexically related terms'
+
+param   -tag     => RECURSE
+        -default => 0
+        
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step GET_ALIASES 
+
+expand 
+        -recurse  => PARAM:RECURSE
+        -groupat  => 10
+        -keeptype => 
+                list:( PRIMARYACC ALIAS UNVERSIONED PRIORVERSION SHORTFOR LEXICAL TENUOUS RELIABLE)
+

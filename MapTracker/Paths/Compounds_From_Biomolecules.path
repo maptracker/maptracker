@@ -1,0 +1,280 @@
+# MapTracker path to gather data surrounding probe information
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Initiate Set the starting nodes that we will use as the specified roots
+
+param
+        -tag   => path_name
+        -value => Compounds_From_Biomolecules
+
+param
+        -tag => path_short
+        -val => 'Recover all chemicals associated with a query compound'
+
+param
+        -tag   => path_desc
+        -value => 'Follows paths associated with any genes, RNAs or proteins to find compounds that are somehow associated with the original query'
+
+param   -tag     => RECURSE
+        -default => 0
+        
+param   -tag     => LIMIT
+        -default => 100000
+        
+param   -tag     => GROUP_CMPD
+        -default => 5
+        
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step EXPAND_GO If GO terms are present, get all children associated with them
+
+
+pick
+        -source   => all
+        -clear    => 1
+        -isclass  => GO
+        -category => QUERY_GO
+
+# Find all children of our request:
+
+expand 
+        -usepick   => QUERY_GO
+        -keeptype  => 'is a parent of'
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -addpick   => QUERY_GO
+        -associate => GO_CHILDREN
+        -recurse   => 9
+
+
+expand 
+        -usepick   => QUERY_GO
+        -keeptype  => 'is attributed to'
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -associate => GO_ASSIGNMENTS
+        -recurse   => 0
+
+# Now that we have found all attributions to query GO terms, and their
+# children, get parents for completeness (should be at most only 5-10
+# terms per original query)
+
+expand 
+        -usepick   => QUERY_GO
+        -keeptype  => 'is a child of'
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -addpick   => PARENT_GO
+        -recurse   => 9
+
+# Get descriptions for each GO term
+
+expand 
+        -usepick   => list(QUERY_GO PARENT_GO)
+        -keeptype  => 'is a shorter term for'
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -associate => GO_DESC
+        -recurse   => 0
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step EXPAND_GENES If gene IDs are present, get all RNAs
+
+# We include the option to move from a versioned to unversioned accession
+# in case the user comes in with NM_123456.2 rather than NM_123456.2
+
+# LOC1128     - is a locus containing ->         NM_000738
+# NM_000738   - can be translated to generate -> NP_000729
+# NM_000738   - is a specific version of ->      NM_000738
+# NP_000729.2 - is a specific version of ->      NP_000729
+
+pick
+        -source   => all
+        -clear    => 1
+        -isclass  => Gene
+        -category => QUERY_GENE
+
+expand 
+        -usepick   => QUERY_GENE
+        -keeptype  => 'is a locus containing'
+        -keepclass => RNA
+        -associate => GENE_TO_RNA
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -sametaxa  => 1
+        -recurse   => 0
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step EXPAND_RNA If RNAs are present, expand them to proteins
+
+pick
+        -source   => all
+        -clear    => 1
+        -isclass  => RNA
+        -category => QUERY_RNA
+
+expand 
+        -usepick   => QUERY_RNA
+        -keeptype  => UNVERSIONED
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+        -addpick   => QUERY_RNA
+
+expand 
+        -usepick   => QUERY_RNA
+        -keeptype  => 'can be translated to generate'
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -associate => RNA_TO_PROTEIN
+        -recurse   => 0
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step ALL_VERSIONS Consider both the versioned and unversioned accessions
+
+# NP_000729  - is an unversioned accession of -> NP_000729.2
+# CAA33334.1 - is a specific version of ->       CAA33334
+
+pick
+        -source   => all
+        -clear    => 1
+        -isclass  => PROTEIN
+        -category => QUERY_PROTEIN
+
+expand 
+        -usepick   => QUERY_PROTEIN
+        -keeptype  => UNVERSIONED
+        -addpick   => QUERY_PROTEIN
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step EXPLODE_GROUPS Get all group members for all proteins
+
+# CLUSTERWITH: Use IPI as a tie-node to another protein
+# NP_000729 <- cluster with - IPI00004374 - cluster with -> P11229
+
+# SAMEAS:      Use NRDB as a tie-node; also other direct relations
+# NP_000729.2 <- same as -> P1_7474 <- same as -> gi113118
+# NP_000729.2 <- same as -> P1_7474 <- same as -> IPI00298980.1
+
+expand 
+        -usepick   => list:(QUERY_PROTEIN)
+        -keeptype  => list:(SAMEAS CLUSTERWITH)
+        -addpick   => CLUSTER_MEMBERS
+        -limit     => PARAM:LIMIT
+        -groupat   => PARAM:LIMIT
+        -associate => CLUSTERS
+        -sametaxa  => 1
+        -recurse   => 1
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step DEVERSION_IPI NRDB links to versioned IPI, get the unversioned acc
+
+# IPI00298980.1 - is a specific version of -> IPI00298980
+
+pick
+        -source   => CLUSTER_MEMBERS
+        -clear    => 1
+        -isclass  => IPI
+        -category => IPI
+
+expand 
+        -keeptype  => 
+                list:('is a specific version of'
+                      CLUSTERWITH )
+        -usepick   => IPI
+        -addpick   => CLUSTER_MEMBERS
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -sametaxa  => 1
+        -recurse   => 1
+
+# Store all proteins
+
+pick
+        -source   => all
+        -isclass  => Protein
+        -category => ALL_PROTEINS
+
+# NRDB proteins can be multi-species, get rid of them
+
+unpick
+        -isclass  => NRDBP
+        -category => ALL_PROTEINS
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step GET_CHEMICALS Get all chemicals attached to the biomolecules
+
+expand 
+        -keeptype  => 'was assayed with'
+        -keepclass => SUBSTANCE
+        -usepick   => ALL_PROTEINS
+        -addpick   => SUBSTANCE_WAS_ASSAYED_WITH
+        -associate => SUBSTANCE_WAS_ASSAYED_WITH
+        -groupat   => PARAM:GROUP_CMPD
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+
+expand 
+        -keeptype  => 'is antagonized by'
+        -keepclass => SUBSTANCE
+        -usepick   => ALL_PROTEINS
+        -addpick   => SUBSTANCE_IS_ANTAGONIZED_BY
+        -associate => SUBSTANCE_IS_ANTAGONIZED_BY
+        -groupat   => PARAM:GROUP_CMPD
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+
+expand 
+        -keeptype  => 'is agonized by'
+        -keepclass => SUBSTANCE
+        -usepick   => ALL_PROTEINS
+        -addpick   => SUBSTANCE_IS_AGONIZED_BY
+        -associate => SUBSTANCE_IS_AGONIZED_BY
+        -groupat   => PARAM:GROUP_CMPD
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+
+expand 
+        -keeptype  => 'is functionally antagonized by'
+        -keepclass => SUBSTANCE
+        -usepick   => ALL_PROTEINS
+        -addpick   => SUBSTANCE_IS_FUNCTIONALLY_ANTAGONZIED_BY
+        -associate => SUBSTANCE_IS_FUNCTIONALLY_ANTAGONZIED_BY
+        -groupat   => PARAM:GROUP_CMPD
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+
+expand 
+        -keeptype  => 'is functionally agonized by'
+        -keepclass => SUBSTANCE
+        -usepick   => ALL_PROTEINS
+        -addpick   => SUBSTANCE_IS_FUNCTIONALLY_AGONIZED_BY
+        -associate => SUBSTANCE_IS_FUNCTIONALLY_AGONIZED_BY
+        -groupat   => PARAM:GROUP_CMPD
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+
+expand 
+        -keeptype  => 'is inhibited by'
+        -keepclass => SUBSTANCE
+        -usepick   => ALL_PROTEINS
+        -addpick   => SUBSTANCE_IS_INHIBITED_BY
+        -associate => SUBSTANCE_IS_INHIBITED_BY
+        -groupat   => PARAM:GROUP_CMPD
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+
+expand 
+        -keeptype  => 'has substrate'
+        -keepclass => SUBSTANCE
+        -usepick   => ALL_PROTEINS
+        -addpick   => SUBSTANCE_HAS_SUBSTRATE
+        -associate => SUBSTANCE_HAS_SUBSTRATE
+        -groupat   => PARAM:GROUP_CMPD
+        -limit     => PARAM:LIMIT
+        -recurse   => 0

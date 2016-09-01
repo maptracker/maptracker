@@ -1,0 +1,57 @@
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Initiate Set up basic parameters
+
+param
+        -tag   => path_name
+        -value => Color_By_Chemistry
+
+param
+        -tag => path_short
+        -val => 'Color chemical entities'
+
+param
+        -tag   => path_desc
+        -value => 'Annotate the network by coloring nodes according to the kind of compound they are, or the data content they represent'
+
+pick
+        -category => SMILES
+        -source   => all
+        -isclass  => smiles
+
+pick
+        -category => AUREUS
+        -source   => all
+        -isclass  => AURIDMOL
+
+pick
+        -category => CHEMICALS
+        -source   => all
+        -isclass  => CHEMICAL
+
+pick
+        -category => FORMULAE
+        -source   => all
+        -isclass  => FORMULA
+
+format
+        -usepick  => CHEMICALS
+        -param    => color
+        -value    => #99ff33
+
+format
+        -usepick  => FORMULAE
+        -param    => color
+        -value    => #00ffcc
+
+format
+        -usepick  => SMILES
+        -param    => color
+        -value    => #ffcc99
+
+format
+        -usepick  => AUREUS
+        -param    => color
+        -value    => #00ffff
+
