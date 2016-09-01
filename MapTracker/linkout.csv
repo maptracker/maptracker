@@ -1,0 +1,21 @@
+"# Tab separated file defining linkouts used in MapTracker popup windows"				
+				
+"# Blank lines are skipped, as are lines starting with '#'"				
+"# The first non-skipped line will be read as column headers"				
+				
+"# These tags will be swapped out of links:"				
+"# _MT_NAME_      - the name of the node"				
+"# _MT_NAMESPACE_ - the name of the node pre-pended with namespace"				
+				
+"# CVS Version information:"				
+"# $Id$"				
+				
+"Label"	"Test"	"Value"	"Window"	"URL"
+"Query Ensembl"	"authority"	"Ensembl, EBI"	"EBI"	"http://www.ensembl.org/Homo_sapiens/textview?species=All&idx=All&q=_MT_NAME_"
+"Query UniProt"	"authority"	"UniProt"	"EBI"	"http://www.ebi.uniprot.org/uniprot-srv/protein/uniProtView.do?proteinId=_MT_NAME_"
+"Query IPI"	"authority"	"IPI"	"IPI"	"http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-newId+[IPI-AllText:_MT_NAME_*]"
+"Query Entrez"	"authority"	"NCBI, RefSeq, LocusLink"	"NCBI"	"http://www.ncbi.nlm.nih.gov/gquery/gquery.fcgi?term=_MT_NAME_"
+"Query Swiss-Prot"	"authority"	"SIB"	"SIB"	"http://us.expasy.org/cgi-bin/niceprot.pl?_MT_NAME_"
+"NCBI dbSNP"	"class"	"Variant"	"SNP"	"http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?rs=_MT_NAME_"
+"Hyperlink"	"class"	"Hyperlink"	"_blank"	"_MT_NAME_"
+"FDA Drug Information"	"class"	"Drug, Trade Name"	"FDA"	"http://www.accessdata.fda.gov/scripts/cder/drugsatfda/index.cfm?fuseaction=Search.SearchAction&SearchType=BasicSearch&SearchTerm=_MT_NAME_"

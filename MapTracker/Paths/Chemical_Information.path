@@ -1,0 +1,67 @@
+# MapTracker path to gather data surrounding probe information
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Initiate Set the starting nodes that we will use as the specified roots
+
+param
+        -tag   => path_name
+        -value => Chemical_Information
+
+param
+        -tag => path_short
+        -val => 'Data related to chemical entities'
+
+param
+        -tag   => path_desc
+        -value => 'Traces relationships that link compounds to one another, and to molecular information'
+
+param   -tag     => RECURSE
+        -default => 0
+        
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step NETWORK Build the initial network of interactions
+
+expand
+        -keeptype => 'is the molecular formula for'
+        -groupat  => 50
+        -recurse  => 0
+
+expand 
+        -keeptype => 'is a reliable alias for'
+        -groupat  => 25
+        -recurse  => 0
+
+expand 
+        -keeptype => list:(ISOMER)
+        -usepick  => ALL
+        -addpick  => ISOMERS
+        -groupat  => 25
+        -recurse  => 2
+
+expand 
+        -keeptype => list:(RELIABLE)
+        -usepick  => ALL
+        -addpick  => ALIASES
+        -groupat  => 10
+        -recurse  => 2
+
+expand 
+        -keeptype => list:(LEXICAL)
+        -usepick  => ALL
+        -addpick  => SECONDARY_ALIASES
+        -groupat  => 10
+        -recurse  => 1
+
+expand 
+        -keeptype => 'has molecular formula'
+        -usepick  => ALL
+        -addpick  => FORMULAE
+        -groupat  => 10
+        -recurse  => 0
+
+walk
+        -path     => /stf/biocgi/tilfordc/working/maptracker/MapTracker/Paths/Color_By_Chemistry
+        -mode     => integrate
+        -usepick  => ALL

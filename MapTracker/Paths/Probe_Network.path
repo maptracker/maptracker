@@ -1,0 +1,177 @@
+# MapTracker path to gather data surrounding probe information
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Initiate Set the starting nodes that we will use as the specified roots
+
+pick
+        -source   => root
+        -clear    => 1
+        -isclass  => AFFYSET
+        -category => STARTING_SETS
+
+param
+        -tag   => path_name
+        -value => Probe_Network
+
+param
+        -tag => path_short
+        -val => 'Probe-centric Co-regulation Network'
+
+param
+        -tag   => path_desc
+        -value => 'Identifies Affy Probe IDs associated with your queries, and connects the IDs into a co-regulation network'
+        
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step ID_NON_AFFY Make sure we have a probe set if we start with a probe
+
+pick 
+        -source   => ROOT
+        -notclass => AFFYSET
+        -clear    => 1
+        -category => NON_AFFY_ROOTS
+
+jump 
+        -test     => pick_count
+        -category => NON_AFFY_ROOTS
+        -trueval  => 'greater than 0'
+        -ontrue   => GET_FROM_BIO
+
+goto BE_CAUTIOUS
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step GET_FROM_BIO Try to find probe sets from other types of root
+
+# Carefully navigate through aliases
+
+telescope 
+        -edge1     => alias
+        -edge2     => 'is a locus containing'
+        -edge3     => 'can be assayed with probe'
+        -teleclass => AFFYSET
+        -teleedge  => 'is a longer term for'
+        -nogroup   => list:(REFSEQ, LOCUS)
+        -sametaxa  => 0
+        -usepick   => NON_AFFY_ROOTS
+        -addpick   => SECONDARY_SETS
+
+telescope 
+        -keeptype => list:('UNVERSIONED',
+                            'is a locus containing', 
+                            'can be translated to generate',
+                            'is translated from',
+                            'can be assayed with probe',
+                            'is fully contained by')
+        -teleclass   => AFFYSET
+        -teleedge    => 'is a longer term for'
+        -nogroup     => list:(REFSEQ, LOCUS)
+        -sametaxa    => 0
+        -recurse     => 5
+        -usepick     => NON_AFFY_ROOTS
+        -addpick     => SECONDARY_SETS
+
+# If we did not find any Affy sets, return
+
+jump 
+        -test     => pick_count
+        -category => SECONDARY_SETS
+        -trueval  => 'less than 1'
+        -ontrue   => RETURN
+
+# Otherwise set the found sets as roots, and de-root the non-sets
+
+# message -text  => 'REMOVING ROOT: SHOWPICK:NON_AFFY_ROOTS'
+# message -text  => 'ADDING ROOT: SHOWPICK:SECONDARY_SETS'
+
+killroot 
+        -source   => NON_AFFY_ROOTS
+
+addroot  
+        -source   => SECONDARY_SETS
+
+return
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step BE_CAUTIOUS We may not want to expand if there are too many nodes
+
+jump 
+        -test     => pick_count
+        -category => list:(STARTING_SETS SECONDARY_SETS)
+        -trueval  => 'greater than 10'
+        -ontrue   => APPOLOGIZE
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step NETWORK Build the initial network of interactions
+
+expand 
+        -keeptype => list:(COREGULATED, ANTIREGULATED)
+        -usepick  => list:(STARTING_SETS SECONDARY_SETS)
+        -addpick  => FOUND_SETS
+        -groupat  => 26
+        -sametaxa => 0
+        -recurse  => 0
+
+goto CONNECT
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step APPOLOGIZE Ooops, do not expand for highly populated graphs
+
+# We do not need to be cautious if that parameter is not true
+
+jump 
+        -test     => boolean
+        -falseval => PARAM:CAUTIOUS
+        -onfalse  => NETWORK
+
+message 
+        -text => 'You provided COUNTPICK:STARTING_SETS Affy IDs, and an additional COUNTPICK:SECONDARY_SETS were also found. Expanding edges to find new nodes for this many sets could be computationally onerous. Because the network was built in 'cautious' mode, expansion has been skipped, and connections will only be made to nodes that already exist in your request. To force expansion, repeat the analysis and explicitly choose this path (PARAM:PATH_NAME), rather than using Automatic.'
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step CONNECT Connect the provided nodes
+
+connect 
+        -keeptype => list:(COREGULATED, ANTIREGULATED)
+        -node     => list:(STARTING_SETS SECONDARY_SETS FOUND_SETS)
+        -target   => list:(STARTING_SETS SECONDARY_SETS FOUND_SETS)
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step ANNOTATE Add gene information to each probe
+
+telescope 
+        -edge1       => 'is a probe for'
+        -edge2       => 'can be translated to generate'
+        -edge3       => 'is a shorter term for'
+        -teleclass   => text
+        -usesmallest => 1
+        -sametaxa    => 0
+        -recurse     => 4
+        -usepick     => list:(FOUND_SETS STARTING_SETS SECONDARY_SETS)
+        -addpick     => PROBE_LABEL
+
+# If we found a lable, finish
+
+jump 
+        -test     => pick_count
+        -category => PROBE_LABEL
+        -trueval  => 'greater than 0'
+        -ontrue   => FINISH
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step EXTENDED_LABEL Use IPI to find labels for probes when ANNOTATE fails
+
+telescope 
+        -edge1       => 'is a probe for'
+        -edge2       => 'can be translated to generate'
+        -edge3       => 'is a sequence in cluster',
+        -edge4       => 'is a cluster with sequence',
+        -edge5       => 'is a shorter term for'
+        -teleclass   => text
+        -usesmallest => 1
+        -sametaxa    => 0
+        -recurse     => 4
+        -usepick     => list:(FOUND_SETS STARTING_SETS SECONDARY_SETS)
+        -addpick     => PROBE_LABEL
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step FINISH Placeholder for jump

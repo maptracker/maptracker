@@ -1,0 +1,60 @@
+# MapTracker path to gather data surrounding probe information
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Initiate Set the starting nodes that we will use as the specified roots
+
+param
+        -tag   => path_name
+        -value => Chemical_Interactions
+
+param
+        -tag => path_short
+        -val => 'Known interactions between biomolecules and small molecules'
+
+param
+        -tag   => path_desc
+        -value => 'Uses biomolecules in your query as a starting point, and finds interactions with chemical entities'
+
+param   -tag     => RECURSE
+        -default => 0
+        
+param   -tag     => LIMIT
+        -default => 100
+        
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step UNVERSIONED Get unversioned accessions
+
+pick
+        -source   => root
+        -clear    => 1
+        -isclass  => BIO
+        -category => START_SET
+
+expand 
+        -keeptype => list:('is a specific version of')
+        -usepick  => START_SET
+        -addpick  => UNVERSIONED
+        -groupat  => 3
+        -recurse  => 0
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step GET_CHEMICALS Get all chemicals attached to the biomolecules
+
+expand 
+        -keeptype  => 
+                list:('was assayed with'
+                      'is antagonized by'
+                      'is agonized by'
+                      'is functionally antagonized by'
+                      'is functionally agonized by'
+                      'is inhibited by'
+                      'has substrate')
+        -keepclass => list:(SUBSTANCE)
+        -usepick   => list:(START_SET UNVERSIONED)
+        -addpick   => SUBSTANCES
+        -groupat   => PARAM:LIMIT
+        -limit     => PARAM:LIMIT
+        -recurse   => 0
+

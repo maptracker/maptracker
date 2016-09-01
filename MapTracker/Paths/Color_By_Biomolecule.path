@@ -1,0 +1,46 @@
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Initiate Set up basic parameters
+
+param
+        -tag   => path_name
+        -value => Color_By_Biomolecule
+
+param
+        -tag => path_short
+        -val => 'Color genes, proteins and RNA'
+
+param
+        -tag   => path_desc
+        -value => 'Annotate the network by coloring nodes according to if they are Gene, RNA or Protein'
+
+pick
+        -category => LOCI
+        -source   => all
+        -isclass  => locus
+
+pick
+        -category => RNA
+        -source   => all
+        -isclass  => rna
+
+pick
+        -category => PROTEIN
+        -source   => all
+        -isclass  => protein
+
+format
+        -usepick  => PROTEIN
+        -param    => color
+        -value    => #ffccff
+
+format
+        -usepick  => LOCI
+        -param    => color
+        -value    => #66ff66
+
+format
+        -usepick  => RNA
+        -param    => color
+        -value    => #ff9999

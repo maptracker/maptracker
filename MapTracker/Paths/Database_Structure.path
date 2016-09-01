@@ -1,0 +1,33 @@
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step INITIALIZE
+
+param
+        -tag => path_name
+        -val => Database_Structure
+
+param
+        -tag => quietroot
+        -val => 1
+
+param
+        -tag => path_desc
+        -val => 'High-order structure between classes within the database'
+
+param
+        -tag => path_short
+        -val => 'MapTracker database organization'
+
+Step MAIN
+
+expand 
+        -recurse  => 50
+        -space    => DB_STATS
+        -groupat  => 10
+        -limit    => 50
+
+format
+        -node     => graph
+        -param    => program
+        -value    => neato

@@ -1,0 +1,349 @@
+# MapTracker path to show RefSeq information
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step INITIALIZE
+
+param
+        -tag => path_name
+        -val => RefSeq_net
+
+param
+        -tag => path_desc
+        -val => 'Builds a network focused around the relationship between loci, transcripts and proteins'
+
+param
+        -tag => path_short
+        -val => 'Gene-centric Data'
+
+# Make a note of what we started with:
+
+pick
+        -category => START_SET
+        -source   => all
+        -addall   => 1
+
+# Identify starting nodes that we should expand with floppier criteria
+
+pick
+        -category => LOOSE_NODES
+        -source   => START_SET
+        -isclass  =>
+                list:( CLUSTER )
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step EXPANDLOOSE For certain node classes, follow weak relationships 1 step
+
+expand 
+        -recurse  => 0
+        -usepick  => LOOSE_NODES
+        -groupat  => 10
+        -limit    => 50
+        -keeptype => 
+                list:( 'is reliably aliased by'
+                       TENUOUS )
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+# If the user has provided a versioned accession, get to the unversioned
+# node. Also, if higher versions exist, draw those in as well.
+
+Step DEVERSION Find an unversioned or more recent node, if possible
+
+expand 
+        -recurse  => 40
+        -groupat  => 10
+        -limit    => 50
+        -keeptype => 
+                list:( 'is an earlier version of'
+                       'is a probe for',
+                       'is a reliable alias for',
+                       'is a lexical variant of'
+                       'is a specific version of'
+                       'is a deprecated entry for' )
+
+# Category PRIMARY will be the nodes we recurse from:
+
+pick
+        -source   => all
+        -addall   => 1
+        -category => PRIMARY
+
+# Do not use deprecated terms as nodes for initial recursion:
+
+unpick
+        -category => PRIMARY
+        -isclass  => DEPRECATED
+
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step DECLUSTER Find members of clusters
+
+pick
+        -source   => PRIMARY
+        -isclass  => CLUSTER
+        -category => CLUSTERS
+
+
+expand 
+        -recurse  => 0
+        -usepick  => CLUSTERS
+        -addpick  => PRIMARY
+        -groupat  => 10
+        -limit    => 50
+        -keeptype => 
+                list:( 'is a cluster with sequence' )
+
+# Do not use clusters as nodes for initial recursion
+
+unpick
+        -category => PRIMARY
+        -isclass  => CLUSTER
+
+# However, we want to make sure that the user requests are used!
+
+pick
+        -category => PRIMARY
+        -source   => START_SET
+        -addall   => 1
+
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+# Follow the cannonical relationships that make up a gene sub-graph
+# Also follow through the SAMEAS relationships
+
+# Locuswith : LOCUS <-> RNA
+# Transcribe: DNA <-> RNA
+# Translate : RNA <-> Protein
+# Memberof  : Cluster <-> EST
+
+Step Grow Find High-quality relationships
+
+# For first level of recursion use large grouping (10):
+
+#message
+#        -text => 'INITIAL EXPANSION'
+
+expand 
+        -keeptype  => 
+                list:(TRANSCRIBE, TRANSLATE, LOCUSWITH, SAMEAS
+                      HOMOLOGOUS, 'is a sequence in cluster'
+                      'is a reliable alias for'
+                      'is a specific version of'
+                      'is a deprecated entry for')
+        -recurse   => 0
+        -nogroup   => list:(REFSEQ, LOCUS)
+        -haltclass => DEPRECATED
+        -usepick   => PRIMARY
+        -groupat   => 10
+        -limit     => 50
+
+# Then recurse deeply with low grouping (3):
+
+#message
+#        -text => 'SECOND EXPANSION'
+
+expand 
+        -keeptype  => 
+                list:(TRANSCRIBE, TRANSLATE, LOCUSWITH, SAMEAS
+                      'is a reliable alias for'
+                      'is a specific version of'
+                      'is a deprecated entry for')
+        -recurse   => 8
+        -nogroup   => list:(REFSEQ, LOCUS)
+        -haltclass => DEPRECATED
+        -usepick   => PRIMARY
+        -addpick   => SECONDARY
+        -groupat   => 3
+        -limit     => 50
+
+#message
+#        -text => 'DONE EXPANSION'
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Check_Success Did anything happen? If not, be more liberal in expansion
+
+jump 
+        -test     => pick_count
+        -category => SECONDARY
+        -trueval  => 'greater than 0'
+        -ontrue   => CARRY_ON
+
+# Ok, nothing was picked. Do some more expansion of network, and try again
+
+message
+        -text => 'Minimal data recovered with cautious search, expanding search to include less reliable edges.'
+
+expand 
+        -keeptype  => 
+                list:('is an unversioned accession of'
+                      'is reliably aliased by'
+                      'contains a reference to'
+                      'fully contains'
+                      'overlaps with' )
+        -recurse   => 3
+        -nogroup   => list:(REFSEQ, LOCUS)
+        -usepick   => PRIMARY
+        -addpick   => PRIMARY
+        -groupat   => 3
+        -limit     => 50
+
+
+# To prevent infinite recursion, add something to SECONDARY
+
+pick
+        -category => SECONDARY
+        -addall   => 1
+        -node     => Recursion_Placeholder
+
+goto GROW
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+# This is just to add a bit of decoration to all the existing nodes -
+# the aliases found in this call will include things like gene symbols
+# or other terms that the researcher may be more familiar with than
+# what was recovered in the prior step (which tend to be cold,
+# unfriendly accessions).
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step CARRY_ON Bogus placeholder to serve as a jump point
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Set_Decorate Record the 'main' nodes to be used when finding aliases
+
+pick
+        -category => TODECORATE
+        -source   => all
+        -addall   => 1
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Aliases Get one level of alias information for each node
+
+expand 
+        -keeptype => 
+                list:('is a reliable alias for'
+                      'is a lexical variant of')
+        -recurse  => 4
+        -usepick  => TODECORATE
+        -limit    => 50
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Sets Get one level of set memberships
+
+skip
+
+expand 
+        -keeptype => 
+                list:( 'is a cluster with sequence'
+                       'is a member of' )
+        -recurse  => 0
+        -groupat  => 3
+        -limit    => 50
+        -usepick  => TODECORATE
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+# For simplicity, just find probes for everything.
+
+Step PROBES Get one level of probes associated for each node
+
+expand 
+        -keeptype => list:('can be assayed with probe')
+        -recurse  => 0
+        -groupat  => 1
+        -usepick  => TODECORATE
+        -limit    => 50
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step EXPAND_PROTEIN Further analyze proteins for sameas relationships
+
+pick
+        -category => PROTEINS
+        -source   => all
+        -isclass  => protein
+
+explicitly_expand
+        -usepick   => PROTEINS
+        -edge1     => list:('is an unversioned accession of'
+                            'has a version that is the same as')
+        -edge2     => SAMEAS
+        -groupat   => 5
+        -limit     => 50
+        -addpick   => NEW_PROTEINS
+
+pick
+        -category => NRDB
+        -source   => all
+        -isclass  => NRDBP
+
+expand
+        -usepick   => NRDB
+        -keeptype  => SAMEAS
+        -groupat   => 5
+        -limit     => 50
+        -nogroup   => list:(REFSEQ, SWISS-PROT)
+        -addpick   => NEW_PROTEINS
+
+expand
+        -usepick   => NRDB
+        -keeptype  => 'is the same as a version of'
+        -groupat   => 3
+        -limit     => 50
+        -nogroup   => list:(REFSEQ, SWISS-PROT)
+        -addpick   => NEW_PROTEINS
+        
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Short_for Get all SHORTFOR edges
+
+expand 
+        -keeptype => 'is a shorter term for'
+        -recurse  => 0
+        -limit    => 10
+        -usepick  => all
+ 
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Finalize Internally connect everything
+
+xxkip
+
+connect
+        -usepick  => all
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Format
+
+pick
+        -category => LOCI
+        -source   => all
+        -isclass  => locus
+
+pick
+        -category => RNA
+        -source   => all
+        -isclass  => rna
+
+format
+        -usepick  => list:(PROTEINS NEW_PROTEINS)
+        -param    => color
+        -value    => #ffccff
+
+format
+        -usepick  => list:(NRDB)
+        -param    => color
+        -value    => #cc99ff
+
+format
+        -usepick  => LOCI
+        -param    => color
+        -value    => #66ff66
+
+format
+        -usepick  => RNA
+        -param    => color
+        -value    => #ff9999

@@ -1,0 +1,31 @@
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+# $Id$
+
+Step Get_protein Find all proteins linked to transcript
+
+expand -keeptype => list:('can be translated to generate'
+                          'is a specific version of')
+       -recurse  => 3
+       -groupat  => 99
+
+pick -category => Protein
+     -isclass  => protein
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Get_go Get GO terms linked to the protein
+
+expand -keeptype => list:('has attribute'
+                          'sameas')
+       -recurse  => 4
+       -usepick  => Protein
+       -groupat  => 99
+
+pick -category => Go
+     -isclass  => go
+
+
+expand -keeptype => list:('is a shorter term for')
+       -recurse  => 1
+       -usepick  => Protein
+       -addpick  => Protein_name
+       -groupat  => 99

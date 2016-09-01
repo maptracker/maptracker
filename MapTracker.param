@@ -1,0 +1,33 @@
+# Parameter file to provide environment to MapTracker
+# Lines starting with # are ignored
+# Lines of format:
+# ENV<spaces>VAR<spaces>Value Here
+# ... will set environment variable VAR to "Value Here"
+# 
+
+# These are environment variables that are used by postgres to find
+# binaries, libraries, and the actual data:
+
+ENV PGPORT <YOUR_VALUE_HERE eg 1234>
+ENV PGHOST <YOUR_VALUE_HERE eg www.example.co>
+ENV PGLIB  <YOUR_VALUE_HERE eg /lib/foo/postgres>
+
+ENV  MT_DB_USER <YOUR_VALUE_HERE eg mymaptracker>
+ENV  MT_DB_NAME <YOUR_VALUE_HERE eg maptracker>
+
+# Used for generating HTML code in some utility programs:
+ENV  MT_SERVER_NAME  <YOUR_VALUE_HERE eg www.example.com>
+ENV  MT_SCRIPT_NAME  <YOUR_VALUE_HERE eg cgi/mapTracker.pl>
+ENV  MT_ROOT_DIR     <YOUR_VALUE_HERE eg /some/dir>
+ENV  MT_WORK_DIR     <YOUR_VALUE_HERE eg foo/MapTracker>
+ENV  MT_TEMP_DIR     <YOUR_VALUE_HERE eg foo/tmp/MapTracker/pid_$$>
+ENV  MT_JS_URL       <YOUR_VALUE_HERE eg /foo/javascript/>
+
+# If this file is present, loading will be prevented:
+ENV  MT_LOCK_FILE    <YOUR_VALUE_HERE eg /foo/bar/MapTrackerLockout>
+
+# Graphviz image path
+ENV  GV_FILE_PATH   <YOUR_VALUE_HERE eg /tmp/MapTracker/node_images/>
+
+# Notification email
+ENV  MT_ADMIN <YOUR_VALUE_HERE eg you@example.com>

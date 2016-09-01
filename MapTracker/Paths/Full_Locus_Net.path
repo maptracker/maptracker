@@ -1,0 +1,268 @@
+# MapTracker path to get all reliable information connected to locus
+# $Id$
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step INITIALIZE
+
+param
+        -tag => path_name
+        -val => Full_Locus_Net
+
+param
+        -tag => path_desc
+        -val => 'Builds an exhaustive network around a locus'
+
+param
+        -tag => path_short
+        -val => 'Exhaustive locus analysis'
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Primary_Backbone Get the basic Gene -> RNA -> Protein relationships
+
+expand 
+        -recurse  => 40
+        -groupat  => 100
+        -limit    => 0
+        -sametaxa => 1
+        -decorate => 0
+        -tossclass => list:(EXON IPIBUILD)
+        -haltclass => list:(IPIBUILD)
+        -keeptype => 
+                list:( 'is a locus containing'
+                       'can be translated to generate'
+                       'can be transcribed to generate'
+                       'is an unversioned accession of'
+                       SAMEAS
+                       'fully contains'
+                       'is an updated entry from',
+                       'is a member of',
+                       'is a sequence in cluster',
+                        )
+
+pick
+        -category => BACKBONE
+        -source   => ALL
+        -isclass  => list:(BIO LOCUS)
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Reliable Get all reliable entities
+
+expand 
+        -recurse  => 2
+        -usepick  => ALL
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -keeptype => 'is a reliable alias for'
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Attributes Get assignments to primary entities
+
+expand 
+        -recurse  => 0
+        -usepick  => ALL
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -keeptype => 
+                list:( 'has feature'
+                       'can be assayed with probe'
+                       'has attribute'
+                       'was assayed with',
+                       'is referenced in'
+                       'was derived from'
+                       'is the preferred lexical variant of'
+                       'is a cause for'
+                        )
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Hierarchies Get hierarchical assignments
+
+pick
+        -category => HASPARENT
+        -source   => ALL
+        -isclass  => list:(GO PHENOTYPE)
+
+expand 
+        -recurse  => 15
+        -usepick  => HASPARENT
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -keeptype => list:('is a reliable alias for', 'is a child of')
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Deprecation Get deprecated entries
+
+expand 
+        -recurse  => 3
+        -usepick  => ALL
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -keeptype => 'is an updated entry from'
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Similar Look for similar sequences
+
+expand 
+        -recurse  => 0
+        -usepick  => BACKBONE
+        -addpick  => SIMILAR
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -sametaxa => 0
+        -keeptype => 
+                list:( 'is homologous to'
+                       'is similar to'
+                       'is fully contained by'  )
+
+expand 
+        -recurse  => 0
+        -usepick  => SIMILAR
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -sametaxa => 0
+        -keeptype => UNVERSIONED
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Identical Get entries that are the same, or reliably so
+
+pick
+        -category => BIONODES
+        -source   => ALL
+        -isclass  => BIO
+
+expand 
+        -recurse  => 3
+        -usepick  => BIONODES
+        -addpick  => BIONODES
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -sametaxa => 0
+        -keeptype => SAMEAS
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step UniGene Try to expand out through UniGene to probes
+
+pick
+        -category => UNIGENE
+        -source   => ALL
+        -isclass  => UNIGENE
+
+explicitly_expand
+        -usepick   => UNIGENE
+        -edge1     => 'is a cluster with sequence'
+        -edge2     => 'is a specific version of'
+        -edge3     => 'can be assayed with probe'
+        -groupat   => 20
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Probes Annotate probeset data
+
+pick
+        -category => PROBESETS
+        -source   => ALL
+        -isclass  => AFFYSET
+
+
+expand 
+        -recurse  => 1
+        -usepick  => PROBESET
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -sametaxa => 0
+        -keeptype => 'is a member of'
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step GO_DESC Get short-for text for GO nodes
+
+pick
+        -category => GO
+        -source   => ALL
+        -isclass  => list:(GO)
+
+expand 
+        -recurse  => 0
+        -usepick  => GO
+        -groupat  => 5
+        -limit    => 0
+        -decorate => 0
+        -sametaxa => 0
+        -keeptype => 'is a shorter term for'
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Description Get short-for text for all nodes
+
+skip
+
+expand 
+        -recurse  => 0
+        -usepick  => ALL
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -sametaxa => 0
+        -keeptype => 'is a shorter term for'
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Gene_Alias Get aliases for gene symbols
+
+skip
+
+
+pick
+        -category => SYMBOLS
+        -source   => ALL
+        -isclass  => GENESYMBOL
+
+expand 
+        -recurse  => 0
+        -usepick  => SYMBOLS
+        -groupat  => 100
+        -limit    => 0
+        -sametaxa => 1
+        -decorate => 0
+        -keeptype => 
+                list:( 'is the preferred lexical variant of'  )
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Interactions Get pathway data
+
+expand 
+        -recurse  => 0
+        -usepick  => list:( BIONODES BACKBONE )
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -sametaxa => 0
+        -keeptype => list:( PHYSICAL ORTHOLOGUE )
+
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Reliable Get all reliable entities
+
+expand 
+        -recurse  => 2
+        -usepick  => ALL
+        -groupat  => 100
+        -limit    => 0
+        -decorate => 0
+        -keeptype => 'is a reliable alias for'
+
+# - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - # - #
+Step Colorize Add some color to graph
+
+
+walk
+        -path     => Color_By_Biomolecule
+        -mode     => integrate
+        -usepick  => all

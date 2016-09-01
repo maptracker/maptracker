@@ -1,0 +1,12 @@
+# Parameter file for AccessDenorm
+
+-pghost => <YOUR_VALUE_HERE eg example.com>
+
+-pglib  => <YOUR_VALUE_HERE eg /lib/postgres/lib>
+
+-pgport => <YOUR_VALUE_HERE eg 1234>
+
+-adminmail => <YOUR_VALUE_HERE eg you@example.com>
+
+-errorfile => /scratch/GenAccErrors.err
+
