@@ -42,6 +42,18 @@ incorporates atypical ontologies and categories including:
 The interactive HTML reports are also accompanied by an Excel workbook
 summarizing the hits for each query.
 
+A major shortcoming of many hypergeometric-based enrichment tools
+(both public and commercial) is a failing to properly calcualte the
+"world" size. For example, it is frequently seen that tools assessing
+enrichment from Affymetric chip designs would consider the genes as
+"pulled from" the entire human genome. This invariably causes
+aggresive inflation of p-values (enrichment appears more significant
+than it actually is). AffyHyperGO is very meticulous at determining
+the "world" in which the analysis should be performed. It can often
+detect this by the identifiers provided by the researcher, but will
+request clarification if there is any ambiguity.
+
 [MT]: ../README.md
 [GO]: img/GSEA-GO.png
 [Other]: img/GSEA-OtherOntologies.png
+[ui]: hypergeometric_affy.pl
