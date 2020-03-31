@@ -47,7 +47,7 @@ The primary driver for creating this tool was support of chemogenomic
 screens. These screens utilized a library of several hundred bioactive
 compounds, each determined to hit multiple known gene targets. The
 library would be applied to cell lines, which would be observed over
-time by high content screening (microscoping observation in multi-well
+time by high content screening (microscopic observation in multi-well
 plates) to identify pre-determined phenotypes (changes in morphology,
 motility, division, etc).
 
