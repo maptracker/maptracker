@@ -50,10 +50,10 @@ All edges are part of a controlled vocabulary. Most (though not all) are directi
 [CBH]: ChemBioHopper.md
 [HA]: HypergeometricAffy.md
 [SG]: MapTracker/standardizeGene.pl
-[schema]: https://github.com/maptracker/maptracker/blob/001f35dab89793dffc6cd2dd9a1602ceb17d3d67/MapTracker/DBI/Schema.pm#L100
+[schema]: https://github.com/maptracker/maptracker/blob/master/MapTracker/DBI/Schema.pm#L100
 [loaders]: https://github.com/search?q=repo%3Amaptracker%2Fmaptracker+extension%3Apl+filename%3Aload&type=Code&ref=advsearch&l=&l=
-[ARAPS]: https://github.com/maptracker/maptracker/blob/001f35dab89793dffc6cd2dd9a1602ceb17d3d67/MapTracker/AccessDenorm.pm#L12728
-[chains]: https://github.com/maptracker/maptracker/blob/001f35dab89793dffc6cd2dd9a1602ceb17d3d67/MapTracker/AccessDenorm.pm#L7522
+[ARAPS]: https://github.com/maptracker/maptracker/blob/master/MapTracker/AccessDenorm.pm#L12728
+[chains]: https://github.com/maptracker/maptracker/blob/master/MapTracker/AccessDenorm.pm#L7522
 [exploreSelf]: MapTracker/exploreSelf.pl
 [Overview]: img/MapTrackerNamespaces.png
 [Edges]: img/MapTrackerEdgeTypes.png
