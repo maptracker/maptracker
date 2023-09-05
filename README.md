@@ -51,7 +51,7 @@ All edges are part of a controlled vocabulary. Most (though not all) are directi
 [HA]: HypergeometricAffy.md
 [SG]: MapTracker/standardizeGene.pl
 [schema]: https://github.com/maptracker/maptracker/blob/master/MapTracker/DBI/Schema.pm#L100
-[loaders]: https://github.com/search?q=repo%3Amaptracker%2Fmaptracker+extension%3Apl+filename%3Aload&type=Code&ref=advsearch&l=&l=
+[loaders]: https://github.com/search?q=repo%3Amaptracker%2Fmaptracker+path%3Aload*.pl&type=code&ref=advsearch
 [ARAPS]: https://github.com/maptracker/maptracker/blob/master/MapTracker/AccessDenorm.pm#L12728
 [chains]: https://github.com/maptracker/maptracker/blob/master/MapTracker/AccessDenorm.pm#L7522
 [exploreSelf]: MapTracker/exploreSelf.pl
