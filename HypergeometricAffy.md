@@ -5,7 +5,8 @@ heavily on Affymetrix oligo-based profiling assays. One of the most
 common requests was to determine which ontology terms appeared to be
 over-represented in a set of over- or under-expressed
 probesets. AffyHyperGO utilizes the [MapTracker][MT] graph database to
-expand the number of ontologies available to a set of Affymetrix probesets.
+expand the number of ontologies available to a set of Affymetrix probesets,
+RNA, protein or gene identifiers.
 
 MapTracker aids in this analysis by aggresively connecting probesets
 to "distant" objects that may have additional ontological
